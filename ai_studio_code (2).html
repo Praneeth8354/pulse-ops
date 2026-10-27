@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PULSE | Precision Fitness & Event Ops</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px -3px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 25px 3px rgba(239, 68, 68, 0.7); }
+    }
+    .glow-overdue { animation: pulse-glow 2s infinite; }
+  </style>
+</head>
+<body class="bg-[#090D14] text-slate-100 min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-black">
+
+  <!-- ================= SCREEN 1: LOGIN ================= -->
+  <div id="login-screen" class="fixed inset-0 z-50 bg-[#090D14] flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-[#0F1420] border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+      <!-- Glow effect -->
+      <div class="absolute -top-20 -right-20 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-20 -left-20 w-44 h-44 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-black font-black shadow-lg shadow-emerald-500/20">
+          <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-black text-white tracking-tight">PULSE OPS</h2>
+          <p class="text-xs text-slate-400">Gym, Diet & Precision Deadline Hub</p>
+        </div>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Email or Athlete ID</label>
+          <input required id="login-email" type="email" value="coach@pulse.app" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Passkey</label>
+          <input required id="login-pass" type="password" value="password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition" />
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm py-3 rounded-xl transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 mt-2">
+          <span>Enter Command Center</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <div class="mt-6 pt-6 border-t border-slate-800 text-center">
+        <p class="text-[11px] text-slate-500">Requires browser notifications enabled for precision meal and workout alarms.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MANDATORY NOTIFICATION GATE ================= -->
+  <div id="notif-gate" class="fixed inset-0 z-40 bg-black/90 backdrop-blur-md flex items-center justify-center p-6 hidden">
+    <div class="w-full max-w-lg bg-[#111726] border border-amber-500/40 rounded-3xl p-8 shadow-2xl text-center space-y-4">
+      <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+        <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
+      </div>
+
+      <h3 class="text-xl font-extrabold text-white">Action Required: Enable Notifications</h3>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        PULSE relies on <strong>strict minute-by-minute alarms</strong> for your pre-workout meals, set timers, and deadline escalations. Without alerts, this app will not be effective.
+      </p>
+
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl text-left text-xs text-slate-400 space-y-1">
+        <div class="flex items-center gap-2 text-slate-200 font-semibold">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i> Why this is compulsory:
+        </div>
+        <div>• Pre-workout meal digestion windows (2h countdown)</div>
+        <div>• Anabolic protein intake timing after session</div>
+        <div>• Critical vendor & event deadlines flagged in bold red</div>
+      </div>
+
+      <button onclick="requestNotificationPermission()" class="w-full bg-gradient-to-r from-amber-500 to-emerald-500 hover:opacity-95 text-black font-extrabold text-sm py-3.5 rounded-xl transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span>Allow Notifications to Continue</span>
+      </button>
+
+      <p id="notif-status-msg" class="text-[11px] text-amber-400 font-mono hidden">Click "Allow" on your browser prompt above!</p>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 2: MAIN DASHBOARD ================= -->
+  <div id="app" class="hidden">
+    
+    <!-- Top Bar -->
+    <header class="border-b border-slate-800/80 bg-[#0C101A]/90 backdrop-blur-md sticky top-0 z-30 px-6 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-black font-black">
+            <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm font-bold text-white tracking-wide">PULSE OPS</h1>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-bold">LIVE SYNC</span>
+            </div>
+            <p id="live-clock" class="text-xs text-slate-400 font-mono">00:00:00</p>
+          </div>
+        </div>
+
+        <!-- Middle Quick Mode Switcher -->
+        <div class="flex bg-slate-900 border border-slate-800 rounded-xl p-1 text-xs">
+          <button onclick="switchTab('deadlines')" id="tab-btn-deadlines" class="px-4 py-1.5 rounded-lg bg-emerald-500 text-black font-bold transition">⏱ Deadlines & Tasks</button>
+          <button onclick="switchTab('gym')" id="tab-btn-gym" class="px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="dumbbell" class="w-3.5 h-3.5"></i>
+            <span>Gym & Diet Coach</span>
+          </button>
+        </div>
+
+        <!-- Right User Actions -->
+        <div class="flex items-center gap-3">
+          <button onclick="testNotificationSound()" title="Test Alert" class="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400">
+            <i data-lucide="bell" class="w-4 h-4"></i>
+          </button>
+          <button onclick="openModal()" class="bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Item
+          </button>
+          <button onclick="handleLogout()" class="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-400">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 mt-6 space-y-8 pb-20">
+
+      <!-- ================= VIEW 1: GYM & DIET ASSISTANT ================= -->
+      <section id="view-gym" class="hidden space-y-6">
+        
+        <!-- Today's Workout Focus -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Next Exercise Focus -->
+          <div class="lg:col-span-2 bg-gradient-to-br from-slate-900 via-[#0F1524] to-slate-900 border border-emerald-500/30 rounded-3xl p-6 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-[10px] uppercase font-mono tracking-widest px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">NEXT EXERCISE IN ROTATION</span>
+              <span class="text-xs font-mono text-slate-400">Leg & Core Focus</span>
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 id="ex-title" class="text-2xl font-black text-white">Barbell Romanian Deadlift</h3>
+                <p id="ex-target" class="text-xs text-slate-400 mt-1">Targets: Posterior chain, hamstrings & glutes</p>
+                <div class="flex items-center gap-4 mt-4 font-mono text-xs">
+                  <div class="bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800">
+                    <span class="text-slate-500">Sets/Reps:</span> <strong class="text-emerald-400" id="ex-sets">4 Sets × 8-10 Reps</strong>
+                  </div>
+                  <div class="bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800">
+                    <span class="text-slate-500">Rest:</span> <strong class="text-slate-200" id="ex-rest">90s between sets</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2 shrink-0">
+                <button onclick="nextExercise()" class="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs px-5 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                  <span>Mark Done & Next</span>
+                  <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Pro Tip Box -->
+            <div class="mt-6 bg-slate-950/60 border border-slate-800/80 p-3.5 rounded-xl flex items-start gap-3">
+              <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+              <p id="ex-tip" class="text-xs text-slate-300">
+                Keep the barbell glued close to your shins. Hinge at your hips backward rather than bending your knees down.
+              </p>
+            </div>
+          </div>
+
+          <!-- Nutrition & Anabolic Timing Window -->
+          <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-xs mb-3">
+                <span class="font-bold uppercase tracking-wider text-slate-400">Diet Window Countdown</span>
+                <i data-lucide="utensils" class="w-4 h-4 text-emerald-400"></i>
+              </div>
+              <h4 class="text-lg font-bold text-white">Post-Workout Meal</h4>
+              <p class="text-xs text-slate-400 mt-0.5">Optimal synthesis window closes soon.</p>
+              
+              <div class="my-5 p-4 rounded-2xl bg-slate-950 border border-emerald-500/20 text-center font-mono">
+                <div class="text-3xl font-black text-emerald-400" id="diet-timer">00:48:20</div>
+                <div class="text-[10px] text-slate-500 uppercase mt-1">Remaining in window</div>
+              </div>
+
+              <div class="text-xs space-y-2 text-slate-300">
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Recommended:</span>
+                  <span class="font-semibold text-emerald-400">40g Protein + 65g Carbs</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Meal Idea:</span>
+                  <span class="text-slate-300">Grilled chicken breast + Jasmine rice</span>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="logMealTaken()" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-2.5 rounded-xl text-slate-200">
+              ✓ Log Meal as Consumed
+            </button>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ================= VIEW 2: DEADLINES ENGINE ================= -->
+      <section id="view-deadlines" class="space-y-8">
+        
+        <!-- Metric Counters -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-gradient-to-b from-red-950/20 to-slate-900/60 border border-red-500/30 p-4 rounded-2xl">
+            <span class="text-xs font-bold uppercase tracking-wider text-red-400 flex items-center justify-between">
+              Critical Overdue <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            </span>
+            <div id="stat-overdue" class="text-3xl font-black text-red-500 font-mono mt-2">0</div>
+            <p class="text-[10px] text-red-400 mt-1">Action immediately</p>
+          </div>
+
+          <div class="bg-gradient-to-b from-amber-950/20 to-slate-900/60 border border-amber-500/30 p-4 rounded-2xl">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center justify-between">
+              Due in < 24 Hours <i data-lucide="clock" class="w-4 h-4"></i>
+            </span>
+            <div id="stat-today" class="text-3xl font-black text-amber-400 font-mono mt-2">0</div>
+            <p class="text-[10px] text-amber-400 mt-1">Imminent deadlines</p>
+          </div>
+
+          <div class="bg-slate-900/40 border border-slate-800 p-4 rounded-2xl">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+              Scheduled Items <i data-lucide="calendar" class="w-4 h-4"></i>
+            </span>
+            <div id="stat-active" class="text-3xl font-black text-slate-200 font-mono mt-2">0</div>
+            <p class="text-[10px] text-slate-500 mt-1">Future days</p>
+          </div>
+
+          <div class="bg-slate-900/40 border border-slate-800 p-4 rounded-2xl">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+              Completed <i data-lucide="check-circle" class="w-4 h-4"></i>
+            </span>
+            <div id="stat-completed" class="text-3xl font-black text-emerald-400 font-mono mt-2">0</div>
+            <p class="text-[10px] text-slate-500 mt-1">Archived at bottom</p>
+          </div>
+        </div>
+
+        <!-- Step 4: What to do today (Overdue & Critical) -->
+        <div class="space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">🚨 What To Do Right Now (Overdue In Red)</h3>
+          </div>
+          <div id="urgent-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Dynamic inject -->
+          </div>
+        </div>
+
+        <!-- Master Task Board -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">📋 All Scheduled Items & Vendor Timings</h3>
+            <span class="text-xs text-slate-500">Sorted by deadline exact time</span>
+          </div>
+          <div class="border border-slate-800/80 rounded-2xl bg-slate-900/20 divide-y divide-slate-800/60 overflow-hidden" id="tasks-container">
+            <!-- Dynamic inject -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Add Item Modal -->
+  <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-[#111624] border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-bold text-white">Add Precision Event or Workout Task</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form id="taskForm" onsubmit="handleAddTask(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Title / Routine Name *</label>
+          <input required id="f-task" type="text" placeholder="e.g. Leg Day Heavy Squat Session or Pay Venue Deposit" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Exact Deadline (Date & Time) *</label>
+            <input required id="f-deadline" type="datetime-local" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Target Event Date</label>
+            <input id="f-event-date" type="date" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Vendor / Trainer / Contact</label>
+            <input id="f-vendor" type="text" placeholder="e.g. Coach Marco / Apex Sound" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Website or Portal URL</label>
+            <input id="f-website" type="url" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Notes / Diet Instructions</label>
+          <textarea id="f-notes" rows="2" placeholder="e.g. Drink 1L water with electrolytes 30m prior" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-5 py-2 text-xs font-bold rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black">Save to Engine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // State
+    const now = Date.now();
+    function toLocalISO(d) {
+      const off = d.getTimezoneOffset() * 60000;
+      return new Date(d.getTime() - off).toISOString().slice(0, 16);
+    }
+
+    const INITIAL_TASKS = [
+      {
+        id: '1',
+        title: 'Pre-Workout Meal: Oats + Whey + Banana',
+        deadline: toLocalISO(new Date(now - 1000 * 60 * 45)), // 45m OVERDUE
+        eventDate: new Date().toISOString().split('T')[0],
+        vendor: 'Meal Prep Kit',
+        notes: 'Needs 90 mins to digest before heavy squats.',
+        website: '',
+        completed: false
+      },
+      {
+        id: '2',
+        title: 'Evening Hypertrophy Session (Leg Day)',
+        deadline: toLocalISO(new Date(now + 1000 * 60 * 90)), // In 90 mins
+        eventDate: new Date().toISOString().split('T')[0],
+        vendor: 'Iron Gym Downtown',
+        notes: 'Focus on progressive overload on RDLs.',
+        website: 'https://gym-example.com',
+        completed: false
+      },
+      {
+        id: '3',
+        title: 'Pay Supplement Store Bulk Creatine Invoice',
+        deadline: toLocalISO(new Date(now + 1000 * 60 * 60 * 30)), // 30h
+        eventDate: '',
+        vendor: 'Optimum Nutrition Hub',
+        notes: '$120 pending payment via link.',
+        website: 'https://nutrition-example.com',
+        completed: false
+      },
+      {
+        id: '4',
+        title: 'Morning Fasted Mobility Routine',
+        deadline: toLocalISO(new Date(now - 1000 * 60 * 60 * 8)),
+        eventDate: '',
+        vendor: 'Mobility Coach',
+        notes: '20 min hip openers completed.',
+        website: '',
+        completed: true
+      }
+    ];
+
+    let tasks = JSON.parse(localStorage.getItem('pulse_tasks')) || INITIAL_TASKS;
+    let userLoggedIn = localStorage.getItem('pulse_auth') === 'true';
+
+    // Gym Exercise Database for Assistant
+    const EXERCISES = [
+      {
+        title: 'Barbell Romanian Deadlift',
+        target: 'Posterior chain, hamstrings & glutes',
+        sets: '4 Sets × 8-10 Reps',
+        rest: '90s between sets',
+        tip: 'Keep the barbell glued close to your shins. Hinge at your hips backward rather than bending your knees down.'
+      },
+      {
+        title: 'Bulgarian Split Squats',
+        target: 'Quads, adductors, glute medius',
+        sets: '3 Sets × 10-12 Reps / leg',
+        rest: '60s between sets',
+        tip: 'Lean your torso slightly forward at a 15-degree angle to place maximum tension into the front working glute.'
+      },
+      {
+        title: 'Standing Calf Raises (Eccentric Focus)',
+        target: 'Gastrocnemius & Soleus',
+        sets: '4 Sets × 15 Reps',
+        rest: '45s between sets',
+        tip: 'Hold at the very bottom stretch for a full 2-second pause to eliminate elastic tendon bounce.'
+      }
+    ];
+    let currentExIndex = 0;
+
+    // Check login state
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      if (userLoggedIn) {
+        document.getElementById('login-screen').classList.add('hidden');
+        checkNotificationGate();
+      }
+    });
+
+    function handleLogin(e) {
+      e.preventDefault();
+      localStorage.setItem('pulse_auth', 'true');
+      userLoggedIn = true;
+      document.getElementById('login-screen').classList.add('hidden');
+      checkNotificationGate();
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('pulse_auth');
+      location.reload();
+    }
+
+    // MANDATORY Notification Logic
+    function checkNotificationGate() {
+      if (!('Notification' in window)) {
+        alert('This browser does not support notifications. Precision alerts will not ring.');
+        unlockApp();
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        unlockApp();
+      } else {
+        // Enforce Gate
+        document.getElementById('notif-gate').classList.remove('hidden');
+      }
+    }
+
+    async function requestNotificationPermission() {
+      document.getElementById('notif-status-msg').classList.remove('hidden');
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        document.getElementById('notif-gate').classList.add('hidden');
+        unlockApp();
+        new Notification("🔥 PULSE Ops Activated", {
+          body: "Compulsory alarms verified. Your workout and deadline notifications are live!"
+        });
+      } else {
+        alert('Notifications were blocked. Please click the padlock icon in your browser address bar and set Notifications to ALLOW to use the app.');
+      }
+    }
+
+    function unlockApp() {
+      document.getElementById('app').classList.remove('hidden');
+      renderDashboard();
+    }
+
+    function testNotificationSound() {
+      if (Notification.permission === 'granted') {
+        new Notification("⚡ PULSE Precision Test", {
+          body: "Alarm engine is running in real-time."
+        });
+      } else {
+        alert('Enable notifications first!');
+      }
+    }
+
+    function switchTab(tab) {
+      const isDeadlines = tab === 'deadlines';
+      document.getElementById('view-deadlines').classList.toggle('hidden', !isDeadlines);
+      document.getElementById('view-gym').classList.toggle('hidden', isDeadlines);
+
+      document.getElementById('tab-btn-deadlines').className = isDeadlines 
+        ? 'px-4 py-1.5 rounded-lg bg-emerald-500 text-black font-bold transition' 
+        : 'px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition';
+
+      document.getElementById('tab-btn-gym').className = !isDeadlines 
+        ? 'px-4 py-1.5 rounded-lg bg-emerald-500 text-black font-bold transition flex items-center gap-1.5' 
+        : 'px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5';
+    }
+
+    // Gym Assistant Actions
+    function nextExercise() {
+      currentExIndex = (currentExIndex + 1) % EXERCISES.length;
+      const ex = EXERCISES[currentExIndex];
+      document.getElementById('ex-title').innerText = ex.title;
+      document.getElementById('ex-target').innerText = `Targets: ${ex.target}`;
+      document.getElementById('ex-sets').innerText = ex.sets;
+      document.getElementById('ex-rest').innerText = ex.rest;
+      document.getElementById('ex-tip').innerText = ex.tip;
+    }
+
+    function logMealTaken() {
+      alert('Post-workout meal logged! 40g Protein recorded into your daily total.');
+      document.getElementById('diet-timer').innerText = "COMPLETED";
+    }
+
+    // Precision Time Calculations
+    function getPrecisionCountdown(deadlineStr) {
+      const deadline = new Date(deadlineStr).getTime();
+      const diffMs = deadline - Date.now();
+      const isOverdue = diffMs < 0;
+      const absDiff = Math.abs(diffMs);
+
+      const totalMins = Math.floor(absDiff / (1000 * 60));
+      const hours = Math.floor(totalMins / 60);
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      const remainingMins = totalMins % 60;
+
+      let human = '';
+      if (days > 0) human = `${days}d ${remainingHours}h`;
+      else if (hours > 0) human = `${hours}h ${remainingMins}m`;
+      else human = `${remainingMins}m`;
+
+      return {
+        isOverdue,
+        diffMs,
+        humanText: isOverdue ? `Overdue by ${human}` : `Due in ${human}`,
+        isCriticalToday: diffMs > 0 && diffMs <= 86400000
+      };
+    }
+
+    function toggleComplete(id) {
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      saveAndRender();
+    }
+
+    function deleteTask(id) {
+      if (confirm('Delete this item?')) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveAndRender();
+      }
+    }
+
+    function saveAndRender() {
+      localStorage.setItem('pulse_tasks', JSON.stringify(tasks));
+      renderDashboard();
+    }
+
+    function renderDashboard() {
+      // Step 2 & 3 Process:
+      // Incomplete tasks first, completed pinned to bottom
+      // Sort ascending by exact deadline
+      const sorted = [...tasks].sort((a, b) => {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      });
+
+      let overdueCount = 0;
+      let todayCount = 0;
+      let activeCount = 0;
+      let completedCount = 0;
+      const urgentList = [];
+
+      sorted.forEach(t => {
+        const timeInfo = getPrecisionCountdown(t.deadline);
+        if (t.completed) {
+          completedCount++;
+        } else {
+          activeCount++;
+          if (timeInfo.isOverdue) {
+            overdueCount++;
+            urgentList.push({ ...t, timeInfo });
+          } else if (timeInfo.isCriticalToday) {
+            todayCount++;
+            urgentList.push({ ...t, timeInfo });
+          }
+        }
+      });
+
+      document.getElementById('stat-overdue').innerText = overdueCount;
+      document.getElementById('stat-today').innerText = todayCount;
+      document.getElementById('stat-active').innerText = activeCount;
+      document.getElementById('stat-completed').innerText = completedCount;
+
+      // Urgent container (Step 4 Output)
+      const urgentContainer = document.getElementById('urgent-container');
+      if (urgentList.length === 0) {
+        urgentContainer.innerHTML = `
+          <div class="col-span-full border border-slate-800 bg-slate-900/40 rounded-2xl p-6 text-center text-slate-500 text-xs">
+            ✨ No immediate emergencies or overdue tasks! Next routines are all on schedule.
+          </div>
+        `;
+      } else {
+        urgentContainer.innerHTML = urgentList.map(t => {
+          const isOverdue = t.timeInfo.isOverdue;
+          return `
+            <div class="p-5 rounded-2xl border transition-all ${
+              isOverdue ? 'bg-red-950/20 border-red-500/50 glow-overdue' : 'bg-amber-950/20 border-amber-500/40'
+            }">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <input type="checkbox" onchange="toggleComplete('${t.id}')" class="w-5 h-5 mt-1 rounded bg-slate-950 border-slate-700 cursor-pointer accent-emerald-500">
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-bold text-sm text-white">${t.title}</span>
+                      <span class="font-mono text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                        isOverdue ? 'bg-red-500 text-white' : 'bg-amber-500 text-black font-extrabold'
+                      }">
+                        ${t.timeInfo.humanText}
+                      </span>
+                    </div>
+
+                    <div class="text-xs text-slate-400 mt-2 space-y-1">
+                      <div>⏰ Target: <strong>${new Date(t.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></div>
+                      ${t.vendor ? `<div>👤 ${t.vendor}</div>` : ''}
+                      ${t.notes ? `<div class="italic text-slate-300">"${t.notes}"</div>` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                ${t.website ? `<a href="${t.website}" target="_blank" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-emerald-400 text-xs"><i data-lucide="external-link" class="w-4 h-4"></i></a>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Master tasks board
+      const tasksContainer = document.getElementById('tasks-container');
+      tasksContainer.innerHTML = sorted.map(t => {
+        const timeInfo = getPrecisionCountdown(t.deadline);
+        const isOverdue = timeInfo.isOverdue && !t.completed;
+        const isToday = timeInfo.isCriticalToday && !t.completed;
+
+        return `
+          <div class="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition ${
+            t.completed ? 'opacity-40 line-through bg-slate-900/10' : isOverdue ? 'bg-red-950/15' : 'hover:bg-slate-800/30'
+          }">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleComplete('${t.id}')" class="w-5 h-5 mt-1 rounded bg-slate-950 border-slate-700 cursor-pointer accent-emerald-500">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-sm text-slate-200">${t.title}</span>
+                  ${
+                    t.completed ? '<span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">Done</span>'
+                    : isOverdue ? `<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/40 font-mono font-bold">${timeInfo.humanText}</span>`
+                    : isToday ? `<span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 font-mono font-bold">${timeInfo.humanText}</span>`
+                    : `<span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">${timeInfo.humanText}</span>`
+                  }
+                </div>
+                <div class="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1 mt-1 font-mono">
+                  <span class="${isOverdue ? 'text-red-400 font-bold' : ''}">Due: ${new Date(t.deadline).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                  ${t.vendor ? `<span>👤 ${t.vendor}</span>` : ''}
+                </div>
+                ${t.notes ? `<div class="text-xs text-slate-400 italic mt-1">${t.notes}</div>` : ''}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-end md:self-center">
+              ${t.website ? `<a href="${t.website}" target="_blank" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">Link ↗</a>` : ''}
+              <button onclick="deleteTask('${t.id}')" class="text-xs p-1 rounded-lg bg-slate-800 hover:text-red-400 text-slate-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function openModal() {
+      document.getElementById('f-deadline').value = toLocalISO(new Date(Date.now() + 3600000 * 2));
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.add('hidden');
+      document.getElementById('taskForm').reset();
+    }
+
+    function handleAddTask(e) {
+      e.preventDefault();
+      const newTask = {
+        id: Date.now().toString(),
+        title: document.getElementById('f-task').value,
+        deadline: document.getElementById('f-deadline').value,
+        eventDate: document.getElementById('f-event-date').value,
+        vendor: document.getElementById('f-vendor').value,
+        website: document.getElementById('f-website').value,
+        notes: document.getElementById('f-notes').value,
+        completed: false
+      };
+      tasks.push(newTask);
+      saveAndRender();
+      closeModal();
+    }
+
+    // Live Clock
+    function updateClock() {
+      const d = new Date();
+      document.getElementById('live-clock').innerText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    setInterval(updateClock, 1000);
+    setInterval(renderDashboard, 30000); // 30s auto-recalculation
+    updateClock();
+  </script>
+</body>
+</html>
